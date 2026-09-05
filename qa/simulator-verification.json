@@ -1,0 +1,125 @@
+{
+  "app": "evenflow",
+  "version": "0.1.0",
+  "checkedAt": "2026-09-05T16:43:04.725Z",
+  "simulator": "0.9.5",
+  "passed": true,
+  "hardwarePerformanceValidated": false,
+  "note": "SDK and simulator acceptance; no BLE or optical performance claim.",
+  "trials": [
+    {
+      "mode": "serial",
+      "detail": 2,
+      "pass": 1,
+      "scenes": 8,
+      "calls": 32,
+      "refused": 0
+    },
+    {
+      "mode": "parallel",
+      "detail": 2,
+      "pass": 1,
+      "scenes": 8,
+      "calls": 32,
+      "refused": 0
+    },
+    {
+      "mode": "serial",
+      "detail": 4,
+      "pass": 1,
+      "scenes": 8,
+      "calls": 32,
+      "refused": 0
+    },
+    {
+      "mode": "parallel",
+      "detail": 4,
+      "pass": 1,
+      "scenes": 8,
+      "calls": 32,
+      "refused": 0
+    },
+    {
+      "mode": "serial",
+      "detail": 8,
+      "pass": 1,
+      "scenes": 8,
+      "calls": 32,
+      "refused": 0
+    },
+    {
+      "mode": "parallel",
+      "detail": 8,
+      "pass": 1,
+      "scenes": 8,
+      "calls": 32,
+      "refused": 0
+    },
+    {
+      "mode": "parallel",
+      "detail": 8,
+      "pass": 2,
+      "scenes": 8,
+      "calls": 32,
+      "refused": 0
+    },
+    {
+      "mode": "serial",
+      "detail": 8,
+      "pass": 2,
+      "scenes": 8,
+      "calls": 32,
+      "refused": 0
+    },
+    {
+      "mode": "parallel",
+      "detail": 4,
+      "pass": 2,
+      "scenes": 8,
+      "calls": 32,
+      "refused": 0
+    },
+    {
+      "mode": "serial",
+      "detail": 4,
+      "pass": 2,
+      "scenes": 8,
+      "calls": 32,
+      "refused": 0
+    },
+    {
+      "mode": "parallel",
+      "detail": 2,
+      "pass": 2,
+      "scenes": 8,
+      "calls": 32,
+      "refused": 0
+    },
+    {
+      "mode": "serial",
+      "detail": 2,
+      "pass": 2,
+      "scenes": 8,
+      "calls": 32,
+      "refused": 0
+    }
+  ],
+  "sources": {
+    "app.json": "b385425b19e6323ae1eb95345b27258d6ab865f19a585e0ecd40804f8ba8de2c",
+    "src/main.ts": "f8490e82e99eb5bc88f0dc7612b907baf3158dce434e313bb76c424cc18cb8b6",
+    "src/model.ts": "1db00a59730089ed2481d1d7ba7e8367d142d53e567366136dfe6054e0d78636",
+    "src/scenes.ts": "2c180b1db987064fb78d8d86af044b9b0779d5559b0ef76c07a0e1cb1789e3f0",
+    "src/encoder.ts": "995acb5006f11c1fa3248b4b1026c0eebab34beb64356dee9d5ec8cdaa9365e6",
+    "src/transport.ts": "08c5904a347a6c34420e6fb1a73809e5fc86ba1f2c53f60323d613c71ec674cd",
+    "src/phone.ts": "70d6bdad46dc09abafe3b210022cdf7adf7bd3708d7a32ccbd09ab96822a9a41",
+    "src/style.css": "31c00fae765bf99d23e0f396d4f266356f9864fd0858658c2ff6d7788b2f462a"
+  },
+  "consoleErrors": [],
+  "formattingAfterValidation": [
+    {
+      "file": "src/scenes.ts",
+      "testedSha256": "946ff8acbf58fd95d38f929f7497c79fc1d45ed7f4c5e6d4833ae3f19549ff93",
+      "change": "Removed one trailing blank line; executable code unchanged."
+    }
+  ]
+}

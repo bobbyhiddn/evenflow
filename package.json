@@ -1,0 +1,20 @@
+{
+  "name": "evenforge-evenflow",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "node scripts/test.mjs",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@evenforge/toolkit": "file:../EvenForge/packages/toolkit",
+    "@evenrealities/even_hub_sdk": "0.0.14"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2",
+    "vite": "5.4.19"
+  }
+}

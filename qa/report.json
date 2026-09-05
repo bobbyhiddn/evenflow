@@ -1,0 +1,70 @@
+{
+  "app": "evenflow",
+  "target": "http://127.0.0.1:5173",
+  "simulator": "0.9.5",
+  "startedAt": "2026-09-05T16:40:31.884Z",
+  "steps": [
+    {
+      "name": "boot",
+      "action": null,
+      "screenshot": "00-boot.png",
+      "bytes": 5643,
+      "sha256": "f3d404367cb0cced733a2fb6bf3d2273343e892318ea91961bc5aa88148ce02a"
+    },
+    {
+      "name": "click",
+      "action": "click",
+      "screenshot": "01-click.png",
+      "bytes": 5643,
+      "sha256": "ebc37761b97fae778b484088bd3ea2fcf401cf3dbc4bf2abbe0ae0af6c242357"
+    },
+    {
+      "name": "up",
+      "action": "up",
+      "screenshot": "02-up.png",
+      "bytes": 5643,
+      "sha256": "ebc37761b97fae778b484088bd3ea2fcf401cf3dbc4bf2abbe0ae0af6c242357"
+    },
+    {
+      "name": "down",
+      "action": "down",
+      "screenshot": "03-down.png",
+      "bytes": 5643,
+      "sha256": "ebc37761b97fae778b484088bd3ea2fcf401cf3dbc4bf2abbe0ae0af6c242357"
+    },
+    {
+      "name": "long_press",
+      "action": "long_press",
+      "screenshot": "04-long_press.png",
+      "bytes": 7404,
+      "sha256": "71ab5ba75dc5c7e42fb0c6f202b455bc5d6f8aef781451dda68bffabba0900fc"
+    },
+    {
+      "name": "long_press_release",
+      "action": "long_press_release",
+      "screenshot": "05-long_press_release.png",
+      "bytes": 7362,
+      "sha256": "3a1963cb4454f565b60a9df7c9c56d1514b0d99a23aed8f5f959ce3020b1e229"
+    },
+    {
+      "name": "double_click",
+      "action": "double_click",
+      "screenshot": "06-double_click.png",
+      "bytes": 3969,
+      "sha256": "d032588b13c17158c485d0b2bf857d8bab26eee02e96e18813d61fb3b1859daa"
+    }
+  ],
+  "consoleErrors": [],
+  "consoleEntries": 32,
+  "finishedAt": "2026-09-05T16:40:36.598Z",
+  "passed": true,
+  "package": {
+    "sdkVersion": "0.0.14",
+    "cliVersion": "0.1.14",
+    "packageCheck": "unavailable (ERROR  Failed to check package ID availability)",
+    "version": "0.1.0",
+    "artifact": "dist/evenflow-0.1.0.ehpk",
+    "bytes": 50379,
+    "sha256": "73f1e0ff7abafb4c318bcb95757a3cfb716152b2cbdde446e28bef51650b14e0"
+  }
+}
