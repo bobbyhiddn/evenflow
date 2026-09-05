@@ -139,6 +139,28 @@ test('local comet movement retains three sectors and a seam crossing clears both
   }
 })
 
+test('Ribbons keeps identical seam strips through every mixture of old and new sectors', () => {
+  for (const detail of [2, 4, 8] as Detail[]) {
+    const reference = renderScene('ribbons', 0, detail)
+    for (const seconds of [0.4, 2, 5, 13, 29]) {
+      const next = renderScene('ribbons', seconds, detail)
+      for (let mask = 0; mask < 16; mask++) {
+        const mixture = TILES.map((_, index) => tilePixels(mask & (1 << index) ? next : reference, index))
+        for (let index = 0; index < 4; index++) {
+          const tile = TILES[index], width = 288 / detail
+          for (let y = 0; y < 144 / detail; y++) for (let x = 0; x < width; x++) {
+            const px = tile.x + x * detail, py = tile.y + y * detail
+            if (Math.abs(px - 288) <= 16 || Math.abs(py - 144) <= 16) {
+              assert.equal(mixture[index][y * width + x], reference.pixels[(py / detail) * reference.width + px / detail])
+            }
+          }
+        }
+      }
+      assert.ok(!sameBytes(reference.pixels, next.pixels), 'Interior still animates')
+    }
+  }
+})
+
 test('frame numbers stamp the same readable ID into every sector and make all four change', () => {
   for (const detail of [2, 4, 8] as Detail[]) {
     const a = renderScene('ribbons', 0, detail, 42), b = renderScene('ribbons', 0, detail, 43)

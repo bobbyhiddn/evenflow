@@ -5,11 +5,13 @@ import app from '../app.json'
 import './style.css'
 
 export interface PhoneState {
-  settings: Settings; running: 'live' | 'compare' | 'check' | null; message: string
+  settings: Settings; running: 'live' | 'compare' | 'check' | 'staging' | null; message: string
   history: RenderSample[]; comparisons: Comparison[]; checking: number | null
+  staging: { phase: 'prepare' | 'release'; frame: number } | null
 }
 interface Actions {
   toggle: () => void; compare: () => void; check: () => void
+  stage: () => void; observeStaging: (value: string) => void
   report: (matches: boolean) => void; change: (next: Partial<Settings>) => void; session: () => unknown
 }
 
@@ -38,13 +40,21 @@ export function mountPhone(actions: Actions) {
         <input id="speed" type="range" min="0.25" max="2" step="0.25" value="0.75">
       </section>
       <details class="lab" open><summary>Performance lab</summary>
-        <label class="switch"><input id="parallel" type="checkbox"><span>Send sectors concurrently <small>Experimental</small></span></label>
-        <p class="hint">Sends all changed sectors together. The host may reject or miss updates; a fast number alone does not confirm what appeared. Refusals switch live playback back to serial sends.</p>
+        <label class="switch"><input id="parallel" type="checkbox"><span>Overlap phone requests <small>Diagnostic</small></span></label>
+        <p class="hint">Device testing still showed sectors updating one at a time. This overlaps requests to the phone; it does not provide a synchronized display update. Refusals switch playback back to serial sends.</p>
         <div class="lab-actions"><button id="compare">Compare speeds</button><button id="check">Check sectors</button></div>
-        <p class="hint">Compare tests the same full-screen sequence at 2px, 4px and 8px, with serial and concurrent sends. Two passes, about two minutes.</p>
+        <p class="hint">Compare tests the same Ribbons sequence at 2px, 4px and 8px, with serial and overlapping requests. Two passes, about two minutes. The suggested playback setting uses serial sends.</p>
         <label class="switch"><input id="markers" type="checkbox"><span>Show frame numbers <small>Changes every sector</small></span></label>
         <div id="check-result" hidden><p id="check-prompt"></p><div class="lab-actions"><button id="match">All four match</button><button id="mismatch">Some differ / are missing</button></div></div>
         <div id="comparisons"></div>
+      </details>
+      <details class="lab"><summary>Protocol lab</summary>
+        <p class="hint">Try uploading most of every sector before finishing all four together. This uses undocumented fragment fields; the phone may refuse them. Watch the glasses during the two steps.</p>
+        <button id="stage">Test staged update</button>
+        <div id="stage-observation" hidden><p id="stage-prompt"></p>
+          <div id="stage-before" class="lab-actions"><button data-observation="held">Still the old number</button><button data-observation="changed-early">Different / missing number</button></div>
+          <div id="stage-after" class="lab-actions"><button data-observation="together">All changed together</button><button data-observation="sequential">All changed in sequence</button><button data-observation="missing">Missing / wrong numbers</button><button data-observation="unknown">Couldn’t tell</button></div>
+        </div>
       </details>
       <div id="export"></div>
       <footer>Tap: pause / play · Swipe: change pattern · Hold: compare · Double press: exit.<br>
@@ -54,6 +64,10 @@ export function mountPhone(actions: Actions) {
   get<HTMLButtonElement>('play').onclick = actions.toggle
   get<HTMLButtonElement>('compare').onclick = actions.compare
   get<HTMLButtonElement>('check').onclick = actions.check
+  get<HTMLButtonElement>('stage').onclick = actions.stage
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-observation]')) {
+    button.onclick = () => actions.observeStaging(button.dataset.observation!)
+  }
   get<HTMLButtonElement>('match').onclick = () => actions.report(true)
   get<HTMLButtonElement>('mismatch').onclick = () => actions.report(false)
   get<HTMLSelectElement>('scene').onchange = event => actions.change({ scene: (event.target as HTMLSelectElement).value as Settings['scene'] })
@@ -84,7 +98,7 @@ export function mountPhone(actions: Actions) {
       ctx.drawImage(small, 0, 0, 576, 288)
     },
     update(state: PhoneState) {
-      const locked = state.running === 'compare' || state.running === 'check'
+      const locked = state.running !== null && state.running !== 'live'
       const play = get<HTMLButtonElement>('play')
       play.disabled = false
       play.textContent = state.running === 'live' ? 'Pause' : state.running ? 'Stop' : 'Play'
@@ -95,7 +109,7 @@ export function mountPhone(actions: Actions) {
       get<HTMLInputElement>('speed').value = String(state.settings.speed)
       get('speed-label').textContent = `${state.settings.speed}×`
       get('detail-label').textContent = `${state.settings.detail}px · ${state.settings.detail === 2 ? 'fine' : state.settings.detail === 4 ? 'balanced' : 'fast'}`
-      for (const control of document.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLSelectElement>('.tuning button, .tuning input, #scene, #parallel, #markers, #compare, #check')) control.disabled = locked
+      for (const control of document.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLSelectElement>('.tuning button, .tuning input, #scene, #parallel, #markers, #compare, #check, #stage')) control.disabled = locked
       for (const button of document.querySelectorAll<HTMLButtonElement>('[data-detail]')) {
         const selected = +button.dataset.detail! === state.settings.detail
         button.classList.toggle('selected', selected)
@@ -117,6 +131,14 @@ export function mountPhone(actions: Actions) {
       get('failures').textContent = String(state.history.reduce((sum, row) => sum + row.refused, 0))
       get('check-result').hidden = state.checking === null
       if (state.checking !== null) get('check-prompt').textContent = `Look at the glasses. After the picture settles, all four sectors should show ${String(state.checking % 100).padStart(2, '0')}.`
+      get('stage-observation').hidden = state.staging === null
+      if (state.staging) {
+        const before = state.staging.phase === 'prepare', number = String(state.staging.frame % 100).padStart(2, '0')
+        get('stage-before').hidden = !before; get('stage-after').hidden = before
+        get('stage-prompt').textContent = before
+          ? `All four sectors should still show ${number}. Confirm to send their final pieces.`
+          : `All four sectors should now show ${number}. How did the change appear? This records your observation, not a measured refresh time.`
+      }
       const results = get('comparisons')
       results.replaceChildren()
       if (state.comparisons.length) {
@@ -125,7 +147,7 @@ export function mountPhone(actions: Actions) {
         const body = document.createElement('tbody')
         for (const row of state.comparisons) {
           const tr = document.createElement('tr')
-          for (const value of [row.mode === 'serial' ? 'Serial' : 'Concurrent', `${row.detail}px`, row.pass, row.valid ? row.acceptedFps.toFixed(2) : 'Incomplete / refused']) {
+          for (const value of [row.mode === 'serial' ? 'Serial' : 'Overlap', `${row.detail}px`, row.pass, row.valid ? row.acceptedFps.toFixed(2) : 'Incomplete / refused']) {
             const td = document.createElement('td'); td.textContent = String(value); tr.append(td)
           }
           body.append(tr)

@@ -1,17 +1,20 @@
 # Evenflow
 
 A full-screen visualizer for Even Realities G2. Three animated patterns span
-the complete 576×288 canvas: **Ribbons**, **Orbits**, and **Comet**. The phone
-controls playback, detail, motion speed, and an experimental concurrent mode.
+the complete 576×288 canvas: **Comet**, **Orbits**, and **Ribbons**. The phone
+controls playback, detail, motion speed, and optional transport experiments.
 
-Version 0.1.0 builds on Evenbench's controlled hardware measurements: image
+Version 0.2.0 builds on Evenbench's controlled hardware measurements: image
 calls dominated frame time, unchanged sectors could be retained, and repeated
 4px blocks were faster than fine detail. The current renderer combines those
-lessons. Its hardware frame rate still needs a device run.
+lessons. Wearer feedback on 0.1.0 found Comet effective, Orbits usable near
+0.5×, Ribbons disjointed, and sectors still appearing sequentially with
+overlapping requests. This version adapts the patterns and adds a native
+fragment-staging probe. Its hardware frame rate still needs a device run.
 
 ## Install and run
 
-Download `evenflow-0.1.0.ehpk` from the GitHub release, upload it to your Even
+Download `evenflow-0.2.0.ehpk` from the GitHub release, upload it to your Even
 Hub **Private builds**, and install it through the Even Realities app. Launch
 Evenflow; the visualizer starts immediately. SDK 0.0.14, host app 2.2.9+.
 
@@ -20,8 +23,11 @@ Evenflow; the visualizer starts immediately. SDK 0.0.14, host app 2.2.9+.
   physical canvas remains 576×288 at every setting. Larger blocks lose detail.
 - **Comet** is useful for the highest local-motion rate: most of the picture
   stays fixed while only the sectors touched by its motion are updated.
-- **Send sectors concurrently** submits up to four changed sectors together.
-  This is experimental; serial sends are the default supported path.
+  It starts at 0.75×. Orbits and Ribbons start at 0.5×; each pattern remembers
+  its selected speed until the app reloads.
+- **Overlap phone requests** submits up to four changed sectors together.
+  Wearer testing still showed sequential sector presentation. This is a
+  diagnostic; serial sends are the default supported path.
 - Hold on the glasses, or tap **Compare speeds**, for a controlled comparison.
 - Double press opens the system exit confirmation.
 
@@ -32,7 +38,8 @@ Evenflow; the visualizer starts immediately. SDK 0.0.14, host app 2.2.9+.
 in reverse order: 12 trials, roughly two minutes on a device. Each trial
 initializes the panel, starts at the same 100ms pacing floor, and measures only
 the subsequent eight states. Interrupted or refused trials are excluded from
-the suggested fastest setting. Playback settings are chosen by the wearer.
+the suggested serial setting. Overlapping-request results are still exported
+for comparison. Playback settings are chosen by the wearer.
 
 After choosing a mode/detail setting, tap **Check sectors**. The app sends
 one scene with the same two-digit number in all four sectors and holds it.
@@ -52,10 +59,32 @@ timings, all comparison results and sector observations, and the most recent
 export explicitly counts any older raw samples discarded from this bounded
 history; aggregate counters remain. It contains no account or device IDs.
 
+## Test staged presentation below the image SDK
+
+Open **Protocol lab → Test staged update**. This is a two-step capability
+probe using undocumented native fragment fields. It sends most of four
+replacement images, holds their last bytes, and asks whether all four old
+numbers remain visible. Confirming releases the four final bytes together;
+then report how the new numbers appeared. **Export** includes native responses,
+fragment counts, call timing spans, and both wearer observations.
+
+The first refusal stops the probe. Stop cancels future fragments and any
+observation prompt, while draining outstanding calls. The next playback,
+comparison, or check rebuilds the normal page before sending images. If the
+host ignores the fields, accepted calls may produce no new picture; report
+missing/wrong numbers. A refused native bridge does not disprove a direct BLE
+route. This test neither measures optical timing nor establishes a frame-rate
+gain; its uncompressed preparation can be slower than ordinary playback.
+
+See [the firmware evidence and interpretation of results](https://github.com/bobbyhiddn/EvenForge/blob/main/docs/even-hub/image-staging.md).
+
 ## Renderer behavior
 
 - Four 288×144 containers cover the panel with one input container behind them.
 - Scenes use flat Gray4 levels, filled shapes, and repeated pixel blocks.
+- Ribbons uses two curves with fixed strips around the vertical join and a
+  clear horizontal join. Sector interiors move while their joining pixels stay
+  identical, including intermediate mixtures of old and new quadrants.
 - Small raw tiles are compared before PNG encoding. Unchanged PNGs and canvas
   objects are reused; physical image sizes remain 288×144.
 - Retention tracks only SDK-accepted payloads. A refused replacement invalidates
@@ -105,7 +134,9 @@ node scripts/verify-simulator.mjs
 The browser script needs Playwright's Chromium installed. It checks actual PNG
 pixels against complete retained panel states, then exercises the UI through
 the real SDK with a mock native host: overlapping calls, draining, refusal
-fallback, comparisons, export, and resuming after the exit dialog. The simulator
+fallback, comparisons, export, and resuming after the exit dialog. Browser
+checks also cover remembered pattern speeds and the staged probe's refusal,
+observations, cancellation, and restoration through a mock native host. The simulator
 script runs all 12 comparison trials through the real SDK and simulator.
 Evidence is recorded in `qa/`; none of these checks reports mock or simulator
 timings as hardware performance.

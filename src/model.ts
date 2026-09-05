@@ -13,9 +13,10 @@ export type Scene = 'ribbons' | 'orbits' | 'comet'
 export type Detail = 2 | 4 | 8
 export type SendMode = 'serial' | 'parallel'
 export interface Settings { scene: Scene; detail: Detail; mode: SendMode; speed: number; markers: boolean }
-export const DEFAULTS: Settings = { scene: 'ribbons', detail: 4, mode: 'serial', speed: 0.75, markers: false }
+export const SCENE_SPEEDS: Record<Scene, number> = { comet: 0.75, orbits: 0.5, ribbons: 0.5 }
+export const DEFAULTS: Settings = { scene: 'comet', detail: 4, mode: 'serial', speed: SCENE_SPEEDS.comet, markers: false }
 export const SCENES: { id: Scene; label: string }[] = [
-  { id: 'ribbons', label: 'Ribbons' }, { id: 'orbits', label: 'Orbits' }, { id: 'comet', label: 'Comet' },
+  { id: 'comet', label: 'Comet' }, { id: 'orbits', label: 'Orbits' }, { id: 'ribbons', label: 'Ribbons' },
 ]
 
 export interface TileImage { containerID: number; containerName: string; imageData: Uint8Array }

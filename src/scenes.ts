@@ -15,15 +15,21 @@ export function renderScene(scene: Scene, seconds: number, detail: Detail, frame
     }
   }
   if (scene === 'ribbons') {
+    // Device testing showed separate sector updates even with overlap. Pin the
+    // curve through a 16px strip on either side of x=288 and leave y=144 clear.
+    // Any mixture of old/new sector interiors then has identical join pixels.
     for (let x = 0; x < width; x++) {
       const px = x * detail
-      const centre = 144 + 74 * Math.sin(px / 125 - seconds * 0.8) + 20 * Math.sin(px / 52 + seconds * 0.45)
-      const second = 144 - 82 * Math.sin(px / 150 - seconds * 0.57 + 0.8)
-      for (let y = 0; y < height; y++) {
-        const d = Math.abs(y * detail - centre), e = Math.abs(y * detail - second)
-        const a = d < 6 ? 15 : d < 16 ? 9 : d < 28 ? 4 : 0
-        const b = e < 4 ? 10 : e < 12 ? 5 : e < 22 ? 2 : 0
-        pixels[y * width + x] = Math.max(a, b)
+      const localX = px % 288
+      const envelope = localX <= 16 || localX >= 272 ? 0 : Math.sin(Math.PI * (localX - 16) / 256) ** 2
+      for (let row = 0; row < 2; row++) {
+        const offset = 22 * Math.sin(px / 55 - seconds * 0.7 + row * 1.4)
+          + 12 * Math.sin(px / 93 + seconds * 0.3 + row)
+        const centre = row * 144 + 72 + envelope * offset
+        for (let y = row * 144 / detail; y < (row + 1) * 144 / detail; y++) {
+          const distance = Math.abs(y * detail - centre)
+          pixels[y * width + x] = distance < 6 ? 15 : distance < 14 ? 9 : distance < 22 ? 4 : 0
+        }
       }
     }
   } else {

@@ -2,49 +2,49 @@
   "app": "evenflow",
   "target": "http://127.0.0.1:5173",
   "simulator": "0.9.5",
-  "startedAt": "2026-09-05T16:40:31.884Z",
+  "startedAt": "2026-09-05T17:38:58.556Z",
   "steps": [
     {
       "name": "boot",
       "action": null,
       "screenshot": "00-boot.png",
-      "bytes": 5643,
-      "sha256": "f3d404367cb0cced733a2fb6bf3d2273343e892318ea91961bc5aa88148ce02a"
+      "bytes": 4550,
+      "sha256": "9877eeeb2e64610416a173df3873b8e2660c3801e4c929984f860d35aa0745dc"
     },
     {
       "name": "click",
       "action": "click",
       "screenshot": "01-click.png",
-      "bytes": 5643,
-      "sha256": "ebc37761b97fae778b484088bd3ea2fcf401cf3dbc4bf2abbe0ae0af6c242357"
+      "bytes": 4543,
+      "sha256": "37ac3eb2ea0d9a12c106b583eea2e0a1ad0ca1e125e8d8c5e316cfd9dff64b76"
     },
     {
       "name": "up",
       "action": "up",
       "screenshot": "02-up.png",
-      "bytes": 5643,
-      "sha256": "ebc37761b97fae778b484088bd3ea2fcf401cf3dbc4bf2abbe0ae0af6c242357"
+      "bytes": 4543,
+      "sha256": "37ac3eb2ea0d9a12c106b583eea2e0a1ad0ca1e125e8d8c5e316cfd9dff64b76"
     },
     {
       "name": "down",
       "action": "down",
       "screenshot": "03-down.png",
-      "bytes": 5643,
-      "sha256": "ebc37761b97fae778b484088bd3ea2fcf401cf3dbc4bf2abbe0ae0af6c242357"
+      "bytes": 4543,
+      "sha256": "37ac3eb2ea0d9a12c106b583eea2e0a1ad0ca1e125e8d8c5e316cfd9dff64b76"
     },
     {
       "name": "long_press",
       "action": "long_press",
       "screenshot": "04-long_press.png",
-      "bytes": 7404,
-      "sha256": "71ab5ba75dc5c7e42fb0c6f202b455bc5d6f8aef781451dda68bffabba0900fc"
+      "bytes": 5162,
+      "sha256": "24b18a5f33e31c67b18dbff89c621df1e1fa67bd56a8ece9d43a35eed0ef0bf8"
     },
     {
       "name": "long_press_release",
       "action": "long_press_release",
       "screenshot": "05-long_press_release.png",
-      "bytes": 7362,
-      "sha256": "3a1963cb4454f565b60a9df7c9c56d1514b0d99a23aed8f5f959ce3020b1e229"
+      "bytes": 5271,
+      "sha256": "6379790da76f3aa4367e165729cf85c82251511acf4cf11e0635c964bc92dd08"
     },
     {
       "name": "double_click",
@@ -55,16 +55,16 @@
     }
   ],
   "consoleErrors": [],
-  "consoleEntries": 32,
-  "finishedAt": "2026-09-05T16:40:36.598Z",
+  "consoleEntries": 30,
+  "finishedAt": "2026-09-05T17:39:03.267Z",
   "passed": true,
   "package": {
     "sdkVersion": "0.0.14",
     "cliVersion": "0.1.14",
     "packageCheck": "unavailable (ERROR  Failed to check package ID availability)",
-    "version": "0.1.0",
-    "artifact": "dist/evenflow-0.1.0.ehpk",
-    "bytes": 50379,
-    "sha256": "73f1e0ff7abafb4c318bcb95757a3cfb716152b2cbdde446e28bef51650b14e0"
+    "version": "0.2.0",
+    "artifact": "dist/evenflow-0.2.0.ehpk",
+    "bytes": 52916,
+    "sha256": "f26ba5a231a01c76275732c7b89ed0f202a362b64d515c8ab958655ee5745664"
   }
 }

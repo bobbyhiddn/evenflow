@@ -1,5 +1,6 @@
 :root { color-scheme: dark; font-family: system-ui, -apple-system, sans-serif; color: #e6ecdf; background: #0a0e0b; font-synthesis: none; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; }
 main { max-width: 700px; margin: 0 auto; padding: 28px 24px 36px; }
 header, .label-row, .preview-label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -41,7 +42,7 @@ summary { font-size: 13px; cursor: pointer; margin-bottom: 16px; }
 .hint { color: #85957b; font-size: 11px; line-height: 1.6; margin: 8px 0 15px; }
 .lab-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .lab-actions button { font-size: 12px; padding: 10px 12px; }
-#check-result { padding: 12px; border: 1px solid #789e5c; border-radius: 8px; margin: 12px 0; font-size: 12px; }
+#check-result, #stage-observation { padding: 12px; border: 1px solid #789e5c; border-radius: 8px; margin: 12px 0; font-size: 12px; }
 table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 16px 0 0; }
 th, td { text-align: left; padding: 8px 5px; border-bottom: 1px solid #263020; }
 th { color: #8c9a82; font-weight: 400; }

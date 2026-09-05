@@ -1,10 +1,11 @@
 import { TileEncoder } from '../src/encoder'
+import { encodeGray4Bmp } from '@evenforge/toolkit'
 import { FrameTransport } from '../src/transport'
 import { TILES, type Detail, type Scene } from '../src/model'
 import { renderScene, tilePixels } from '../src/scenes'
 
 function assert(ok: unknown, message: string): asserts ok { if (!ok) throw new Error(message) }
-const report = { scenes: 0, decodedTiles: 0, retainedPixelEquivalence: false, physicalDimensions: false, pngCache: false }
+const report = { scenes: 0, decodedTiles: 0, decodedBmpTiles: 0, retainedPixelEquivalence: false, physicalDimensions: false, pngCache: false }
 try {
   const panel = document.createElement('canvas'); panel.width = 576; panel.height = 288
   document.body.append(panel)
@@ -41,6 +42,26 @@ try {
         }
       }
       previous = images; report.scenes++
+    }
+  }
+  // Decode the actual experimental BMPs with Chromium, independently of the
+  // encoder's header/nibble tests and the mock host's fragment accounting.
+  for (const detail of [2, 4, 8] as Detail[]) {
+    const raster = renderScene('ribbons', 2, detail, 42)
+    for (let index = 0; index < 4; index++) {
+      const pixels = tilePixels(raster, index)
+      const bmp = encodeGray4Bmp(pixels, 288 / detail, 144 / detail, detail)
+      const bitmap = await createImageBitmap(new Blob([new Uint8Array(bmp)], { type: 'image/bmp' }))
+      assert(bitmap.width === 288 && bitmap.height === 144, 'BMP dimensions must match the physical container')
+      ctx.drawImage(bitmap, TILES[index].x, TILES[index].y); bitmap.close()
+      const actual = ctx.getImageData(TILES[index].x, TILES[index].y, 288, 144).data
+      for (let y = 0; y < 144; y++) for (let x = 0; x < 288; x++) {
+        const value = pixels[Math.floor(y / detail) * (288 / detail) + Math.floor(x / detail)] * 17
+        const at = (y * 288 + x) * 4
+        assert(actual[at] === value && actual[at + 1] === value && actual[at + 2] === value && actual[at + 3] === 255,
+          `Incorrect BMP pixel: ${detail}px sector ${index}, ${x},${y}`)
+      }
+      report.decodedBmpTiles++
     }
   }
   report.retainedPixelEquivalence = report.physicalDimensions = report.pngCache = true

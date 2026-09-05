@@ -4,6 +4,7 @@
   "pixels": {
     "scenes": 36,
     "decodedTiles": 114,
+    "decodedBmpTiles": 12,
     "retainedPixelEquivalence": true,
     "physicalDimensions": true,
     "pngCache": true
@@ -16,7 +17,10 @@
     "comparisonScenes": 96,
     "oneExportButton": true,
     "sectorObservationExported": true,
-    "resumeAfterExitDialog": true
+    "resumeAfterExitDialog": true,
+    "patternSpeedsRemembered": true,
+    "fragmentProbeRefusalAndObservation": true,
+    "fragmentProbeCancellationAndRestore": true
   },
   "consoleErrors": [],
   "hardwarePerformanceValidated": false

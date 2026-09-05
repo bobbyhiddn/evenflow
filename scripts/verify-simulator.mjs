@@ -58,10 +58,12 @@ try {
     await writeFile(path.join(root, `qa/compare-${surface}.png`), Buffer.from(await response.arrayBuffer()))
   }
   const sources = {}
-  for (const file of ['app.json', 'src/main.ts', 'src/model.ts', 'src/scenes.ts', 'src/encoder.ts', 'src/transport.ts', 'src/phone.ts', 'src/style.css']) {
+  for (const file of ['app.json', 'src/main.ts', 'src/model.ts', 'src/scenes.ts', 'src/encoder.ts', 'src/transport.ts', 'src/phone.ts', 'src/style.css',
+    '../EvenForge/packages/toolkit/src/index.js', '../EvenForge/packages/toolkit/src/image-fragments.js']) {
     sources[file] = createHash('sha256').update(await readFile(path.join(root, file))).digest('hex')
   }
-  const report = { app: 'evenflow', version: '0.1.0', checkedAt: new Date().toISOString(), simulator: '0.9.5',
+  const manifest = JSON.parse(await readFile(path.join(root, 'app.json'), 'utf8'))
+  const report = { app: 'evenflow', version: manifest.version, checkedAt: new Date().toISOString(), simulator: '0.9.5',
     passed: true, hardwarePerformanceValidated: false, note: 'SDK and simulator acceptance; no BLE or optical performance claim.',
     trials, sources, consoleErrors: [] }
   await writeFile(path.join(root, 'qa/simulator-verification.json'), `${JSON.stringify(report, null, 2)}\n`)

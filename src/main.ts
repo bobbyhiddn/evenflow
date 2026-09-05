@@ -1,17 +1,21 @@
 import { CreateStartUpPageContainer, ImageContainerProperty, ImageRawDataUpdate, RebuildPageContainer,
   TextContainerProperty, waitForEvenAppBridge } from '@evenrealities/even_hub_sdk'
-import { listenForInput } from '@evenforge/toolkit'
-import { DEFAULTS, SCENES, TILES, type Comparison, type Detail, type RenderSample, type SectorCheck,
+import { encodeGray4Bmp, listenForInput, probeImageStaging, type ImageStagingResult } from '@evenforge/toolkit'
+import { DEFAULTS, SCENES, SCENE_SPEEDS, TILES, type Comparison, type Detail, type RenderSample, type SectorCheck,
   type SendMode, type Settings } from './model'
-import { renderScene } from './scenes'
+import { renderScene, tilePixels } from './scenes'
 import { TileEncoder } from './encoder'
 import { FrameTransport } from './transport'
 import { mountPhone, type PhoneState } from './phone'
 import app from '../app.json'
 
 const state: PhoneState = { settings: { ...DEFAULTS }, running: null, message: 'Connecting to the glasses…',
-  history: [], comparisons: [], checking: null }
+  history: [], comparisons: [], checking: null, staging: null }
 const checks: SectorCheck[] = []
+const sceneSpeeds = { ...SCENE_SPEEDS }
+const stagingRuns: { at: string; beforeFrame: number; afterFrame: number; detail: Detail
+  beforeObservation: string | null; afterObservation: string | null; result: ImageStagingResult | null }[] = []
+let stagingAnswer: ((value: string | null) => void) | null = null
 const totals = { completedScenes: 0, calls: 0, refused: 0, bytes: 0, measuredMs: 0, discardedSamples: 0 }
 const query = new URLSearchParams(location.search)
 if (query.get('mode') === 'parallel') state.settings.mode = 'parallel'
@@ -24,11 +28,13 @@ const ui = mountPhone({
   toggle: () => command(async () => { if (active) await stop(); else play() }),
   compare: () => command(async () => { await stop(); launch('compare', compare) }),
   check: () => command(async () => { await stop(); launch('check', checkSectors) }),
+  stage: () => command(async () => { await stop(); launch('staging', checkStaging) }),
+  observeStaging: value => stagingAnswer?.(value),
   report: reportCheck, change,
   session: () => ({ app: 'evenflow', appVersion: app.version, schemaVersion: 1, capturedAt: new Date().toISOString(),
-    userAgent: navigator.userAgent, settings: { ...state.settings }, totals: { ...totals },
-    measurement: 'Complete scene updates accepted by the SDK; optical refresh is not measured. Concurrent sends are experimental.',
-    opticalRefreshMeasured: false, sectorChecks: checks, comparisons: state.comparisons,
+    userAgent: navigator.userAgent, settings: { ...state.settings }, sceneSpeeds: { ...sceneSpeeds }, totals: { ...totals },
+    measurement: 'Complete scene updates accepted by the SDK; optical refresh is not measured. Overlapping phone requests did not synchronize sectors in device testing.',
+    opticalRefreshMeasured: false, sectorChecks: checks, stagingProbes: stagingRuns, comparisons: state.comparisons,
     recentFrames: state.history, rawFrameLimit: 600, rawFramesDiscarded: totals.discardedSamples }),
 })
 ui.preview(renderScene(state.settings.scene, 0, state.settings.detail))
@@ -56,11 +62,13 @@ function command(action: () => Promise<void>) {
 }
 
 function change(next: Partial<Settings>) {
-  if (state.running === 'compare' || state.running === 'check') return
+  if (state.running !== null && state.running !== 'live') return
+  if (next.scene && next.scene !== state.settings.scene) state.settings.speed = sceneSpeeds[next.scene]
+  if (next.speed !== undefined) sceneSpeeds[next.scene ?? state.settings.scene] = next.speed
   Object.assign(state.settings, next)
   pendingCheck = null; state.checking = null
   state.message = state.settings.mode === 'parallel'
-    ? 'Concurrent sends enabled. Check the sectors on the glasses; acceptance does not confirm display.'
+    ? 'Phone requests overlap. Device testing still showed sectors appearing in sequence.'
     : 'Serial sends · unchanged sectors stay on the glasses.'
   if (ready) publish()
 }
@@ -134,7 +142,7 @@ async function draw(settings: Settings, seconds: number, context: RenderSample['
 }
 
 function play() {
-  state.message = state.settings.mode === 'parallel' ? 'Playing with concurrent sends · experimental.' : 'Playing · only changed sectors are sent.'
+  state.message = state.settings.mode === 'parallel' ? 'Playing with overlapping phone requests · sectors may still appear in sequence.' : 'Playing · only changed sectors are sent.'
   launch('live', async signal => {
     let previous = performance.now(), failures = 0
     while (!signal.aborted) {
@@ -192,8 +200,8 @@ async function compare(signal: AbortSignal) {
     const rows = state.comparisons.filter(row => row.mode === profile.mode && row.detail === profile.detail && row.valid)
     return rows.length === 2 ? [{ ...profile, rate: rows.reduce((sum, row) => sum + row.acceptedFps, 0) / 2 }] : []
   }).sort((a, b) => b.rate - a.rate)
-  const best = candidates[0]
-  state.message = best ? `Fastest accepted rate: ${best.mode === 'serial' ? 'serial' : 'concurrent'} / ${best.detail}px at ${best.rate.toFixed(2)} scenes/sec. Select it and Check sectors on the glasses.`
+  const best = candidates.find(candidate => candidate.mode === 'serial')
+  state.message = best ? `Serial setting to try: ${best.detail}px at ${best.rate.toFixed(2)} accepted scenes/sec. Judge smoothness on the glasses; overlapping requests did not synchronize device updates.`
     : 'Comparison finished without a complete pair of passes. Export contains the failed and partial results.'
   console.log('[evenflow] comparison complete')
 }
@@ -207,6 +215,65 @@ async function checkSectors(signal: AbortSignal) {
   if (!result.complete) { state.message = 'The host refused part of the check. Select serial sends and try again.'; return }
   pendingCheck = { frame, settings }; state.checking = frame
   state.message = 'Scene held. Check that the same number appears in all four sectors, then report below.'
+}
+
+function observeStaging(phase: 'prepare' | 'release', frame: number, signal: AbortSignal): Promise<string | null> {
+  if (signal.aborted) return Promise.resolve(null)
+  state.staging = { phase, frame }; publish()
+  return new Promise(resolve => {
+    const abort = () => finish(null)
+    const finish = (value: string | null) => {
+      signal.removeEventListener('abort', abort); stagingAnswer = null; state.staging = null
+      publish(); resolve(value)
+    }
+    stagingAnswer = finish; signal.addEventListener('abort', abort, { once: true })
+  })
+}
+
+async function checkStaging(signal: AbortSignal) {
+  const settings = { ...state.settings, scene: 'ribbons' as const, markers: true, mode: 'serial' as const }
+  const beforeFrame = ++frameNumber, afterFrame = ++frameNumber
+  state.message = 'Preparing a numbered reference using normal image sends…'; publish()
+  const baseline = await draw(settings, sceneTime, 'check', signal, beforeFrame)
+  if (signal.aborted) return
+  if (!baseline.complete) { state.message = 'The reference image failed. The fragment probe was not started.'; return }
+  const run: typeof stagingRuns[number] = { at: new Date().toISOString(), beforeFrame, afterFrame,
+    detail: settings.detail, beforeObservation: null, afterObservation: null, result: null }
+  stagingRuns.push(run)
+  const raster = renderScene('ribbons', sceneTime + 2, settings.detail, afterFrame)
+  const images = TILES.map((tile, index) => ({ containerID: tile.id, containerName: tile.name,
+    imageData: encodeGray4Bmp(tilePixels(raster, index), 288 / settings.detail, 144 / settings.detail, settings.detail) }))
+  // Raw fragments can leave assembly state behind. Always rebuild before any
+  // subsequent normal playback/check/comparison, even after refusal or abort.
+  needsRebuild = true; transport.reset(); signature = ''
+  state.message = 'Uploading unfinished images through the native bridge…'; publish()
+  run.result = await probeImageStaging(async packet => {
+    const watchdog = setTimeout(() => {
+      active?.abort(); state.message = 'The native fragment call has stalled. Waiting for it to return before restoring playback.'; publish()
+    }, 8000)
+    try { return await bridge.callEvenApp('updateImageRawData', packet) }
+    finally { clearTimeout(watchdog) }
+  }, images, { signal, sessionBase: ((stagingRuns.length - 1) * 4) % 255 + 1,
+    onPrepared: async () => {
+      state.message = 'Images staged. Check that the old numbers are still visible.'
+      run.beforeObservation = await observeStaging('prepare', beforeFrame, signal)
+      if (run.beforeObservation === 'held') { state.message = 'Sending the four final bytes…'; publish(); return true }
+      return false
+    },
+  })
+  if (run.result.status === 'released') {
+    ui.preview(raster)
+    state.message = 'Final pieces accepted. Check the new numbers on the glasses.'
+    run.afterObservation = await observeStaging('release', afterFrame, signal)
+  }
+  state.staging = null
+  state.message = run.result.status === 'refused'
+    ? 'The native bridge refused the fragment probe. Export includes its response. Play restores normal playback.'
+    : run.result.status === 'changed-early'
+      ? 'The reference did not hold. Probe stopped; Export includes the observation. Play restores normal playback.'
+      : run.afterObservation === 'missing'
+        ? 'Calls were accepted, but the new picture was not confirmed. Export includes the probe; Play restores normal playback.'
+        : 'Fragment probe recorded. Export includes responses and observations; Play restores normal playback.'
 }
 
 function reportCheck(matches: boolean) {
